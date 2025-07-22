@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  splunk:
+    image: splunk/splunk:latest
+    container_name: splunk
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
+      - SPLUNK_ENABLE_LISTEN=9997
+    ports:
+      - "8000:8000"   # Web UI
+      - "9997:9997"   # Indexer port (TCP)
+    volumes:
+      - splunk-data:/opt/splunk/var
+    networks:
+      - splunknet
+
+  forwarder:
+    image: splunk/universalforwarder:latest
+    container_name: splunk-uf
+    environment:
+      - SPLUNK_START_ARGS=--accept-license
+      - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
+      - SPLUNK_ADD=monitor /logs/app.log
+      - SPLUNK_FORWARD_SERVER=splunk:9997
+    volumes:
+      - ./logs:/logs
+    depends_on:
+      - splunk
+    networks:
+      - splunknet
+
+volumes:
+  splunk-data:
+
+networks:
+  splunknet:
+    driver: bridge
